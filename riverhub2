@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gauge Page</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    :root{
+      --bg:#071117; --panel:#0d1b24; --panel2:#102633; --line:#203949;
+      --text:#edf7fb; --muted:#8da8b7; --blue:#4aa3ff; --green:#47d18c;
+      --amber:#ffbd4a; --red:#ff5b5b; --white:#fff; --shadow:0 20px 60px rgba(0,0,0,.35);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0; color:var(--text);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(74,163,255,.16), transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(71,209,140,.11), transparent 28%),
+        linear-gradient(180deg,#071117 0%,#071117 45%,#091821 100%);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 44px}
+    header{
+      position:sticky;top:0;z-index:20;margin:0 -18px 18px;padding:18px;
+      backdrop-filter:blur(14px);background:rgba(7,17,23,.78);border-bottom:1px solid rgba(255,255,255,.06)
+    }
+    .head-inner{max-width:1240px;margin:0 auto;display:flex;gap:16px;align-items:center;justify-content:space-between}
+    .brand h1{margin:0;font-size:clamp(28px,4vw,48px);letter-spacing:-.055em;line-height:.95}
+    .brand p{margin:8px 0 0;color:var(--muted);font-size:14px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    button,.pill{
+      border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--text);
+      border-radius:999px;padding:10px 13px;font-size:13px;cursor:pointer;text-decoration:none
+    }
+    button:hover,.pill:hover{background:rgba(255,255,255,.1)}
+    .hero{display:grid;grid-template-columns:1.35fr .65fr;gap:18px;margin-bottom:18px}
+    .panel{
+      border:1px solid rgba(255,255,255,.09);background:linear-gradient(180deg,rgba(16,38,51,.86),rgba(13,27,36,.88));
+      border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden
+    }
+    .summary{padding:22px}
+    .summary-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+    .eyebrow{color:var(--green);font-weight:800;text-transform:uppercase;letter-spacing:.14em;font-size:12px}
+    .big{font-size:clamp(30px,5vw,58px);font-weight:900;letter-spacing:-.07em;margin:6px 0}
+    .muted{color:var(--muted)}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+    .stat{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(255,255,255,.04)}
+    .stat .label{color:var(--muted);font-size:12px}
+    .stat .value{font-size:22px;font-weight:900;margin-top:4px}
+    .resource-grid{display:grid;grid-template-columns:1fr;gap:10px;padding:18px}
+    .resource{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-radius:17px;
+      background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);text-decoration:none
+    }
+    .resource strong{display:block}
+    .resource span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+    .tab.active{background:var(--text);color:#061017;border-color:var(--text);font-weight:800}
+    .river-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    .river-card{
+      padding:17px;border-radius:20px;border:1px solid rgba(255,255,255,.09);
+      background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.035));
+      box-shadow:0 14px 38px rgba(0,0,0,.22);cursor:pointer;transition:.18s ease
+    }
+    .river-card:hover{transform:translateY(-2px);border-color:rgba(74,163,255,.45)}
+    .river-card.selected{outline:2px solid rgba(74,163,255,.7)}
+    .river-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:900;font-size:18px;letter-spacing:-.03em}
+    .river-sub{color:var(--muted);font-size:12px;margin-top:4px}
+    .river-metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+    .mini{padding:10px;border-radius:15px;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.06)}
+    .mini .label{color:var(--muted);font-size:11px}
+    .mini .value{font-size:18px;font-weight:900;margin-top:4px}
+    .gauge-section{display:none}
+    .gauge-section.active{display:block}
+    .section-title{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:24px 0 12px}
+    .section-title h2{font-size:30px;letter-spacing:-.05em;margin:0}
+    .gauge-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    .gauge{padding:17px;min-height:438px}
+    .gauge-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+    .gauge h3{font-size:19px;line-height:1.12;letter-spacing:-.035em;margin:0 0 6px}
+    .badge{font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.045);border-radius:999px;padding:6px 9px;white-space:nowrap}
+    .gauge-metrics{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+    .metric{min-width:125px;flex:1;padding:12px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08)}
+    .metric .label{color:var(--muted);font-size:12px}
+    .metric .value{font-size:24px;font-weight:950;letter-spacing:-.04em;margin-top:4px}
+    .chart{height:250px;width:100%}
+    .gauge-foot{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:12px;margin-top:10px}
+    .gauge-foot a{color:var(--blue);font-weight:800;text-decoration:none}
+    .good{color:var(--green)} .warm{color:var(--amber)} .hot{color:var(--red)}
+    .status-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px}
+    .status-good{background:var(--green)} .status-warm{background:var(--amber)} .status-hot{background:var(--red)}
+    .empty{color:var(--muted);padding:24px;text-align:center}
+    @media(max-width:980px){.hero{grid-template-columns:1fr}.river-grid{grid-template-columns:repeat(2,1fr)}.gauge-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:560px){.head-inner{display:block}.actions{justify-content:flex-start;margin-top:14px}.river-grid,.stats{grid-template-columns:1fr}.wrap{padding-left:12px;padding-right:12px}header{margin-left:-12px;margin-right:-12px}.gauge{padding:14px}.chart{height:230px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="head-inner">
+      <div class="brand">
+        <h1>Gauge Page</h1>
+        <p>Live flows, water temps, and quick links for Montana trout water.</p>
+      </div>
+      <div class="actions">
+        <button onclick="refreshAll()">Refresh</button>
+        <button onclick="showFavorites()">Favorites</button>
+        <button onclick="showAllRivers()">All rivers</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="hero">
+      <div class="panel summary">
+        <div class="summary-top">
+          <div>
+            <div class="eyebrow">Western Montana</div>
+            <div class="big">River Command Center</div>
+            <div class="muted" id="lastUpdated">Loading live USGS data...</div>
+          </div>
+          <div class="badge" id="gaugeCount">-- gauges</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">Loaded</div><div class="value" id="loadedCount">--</div></div>
+          <div class="stat"><div class="label">Cool Temps</div><div class="value good" id="coolCount">--</div></div>
+          <div class="stat"><div class="label">Warm</div><div class="value warm" id="warmCount">--</div></div>
+          <div class="stat"><div class="label">Too Hot</div><div class="value hot" id="hotCount">--</div></div>
+        </div>
+      </div>
+
+      <div class="panel resource-grid">
+        <a class="resource" href="https://fwp.mt.gov/buyandapply/fishing-licenses" target="_blank" rel="noopener"><div><strong>Fishing License</strong><span>Montana FWP</span></div><b>↗</b></a>
+        <a class="resource" href="https://fwp.mt.gov/news/current-closures-restrictions/waterbody-closures" target="_blank" rel="noopener"><div><strong>Restrictions</strong><span>Closures and hoot owl rules</span></div><b>↗</b></a>
+        <a class="resource" href="https://www.nrcs.usda.gov/wps/portal/wcc/home/quicklinks/imap" target="_blank" rel="noopener"><div><strong>Snowpack</strong><span>NRCS map</span></div><b>↗</b></a>
+        <a class="resource" href="https://inciweb.wildfire.gov/" target="_blank" rel="noopener"><div><strong>Wildfire Map</strong><span>InciWeb</span></div><b>↗</b></a>
+      </div>
+    </section>
+
+    <nav class="tabs" id="tabs"></nav>
+    <section class="river-grid" id="riverGrid"></section>
+    <section id="details"></section>
+  </div>
+
+  <script>
+    const RIVERS = [
+      { name:"Blackfoot", gauges:[
+        { name:"Blackfoot River near Bonner, MT", id:"12340000" },
+        { name:"Blackfoot River near Helmville, MT", id:"12335100" }
+      ]},
+      { name:"Bitterroot", gauges:[
+        { name:"Bitterroot River near Darby, MT", id:"12344000" },
+        { name:"Bitterroot River at Bell Crossing, MT", id:"12350250" },
+        { name:"Bitterroot River near Missoula, MT", id:"12352500" }
+      ]},
+      { name:"Rock Creek", gauges:[
+        { name:"Rock Creek near Clinton, MT", id:"12334510" },
+        { name:"Middle Fork Rock Creek near Philipsburg, MT", id:"12332000" }
+      ]},
+      { name:"Clark Fork", gauges:[
+        { name:"Clark Fork at Goldcreek, MT", id:"12324680" },
+        { name:"Clark Fork at Turah Bridge, MT", id:"12334550" },
+        { name:"Clark Fork above Missoula, MT", id:"12340500" },
+        { name:"Clark Fork below Missoula, MT", id:"12353000" },
+        { name:"Clark Fork at St. Regis, MT", id:"12354500" }
+      ]},
+      { name:"Missouri", gauges:[{ name:"Missouri River below Holter Dam near Wolf Creek, MT", id:"06066500" }]},
+      { name:"Gallatin", gauges:[{ name:"Gallatin River at Logan, MT", id:"06052500" }]},
+      { name:"Madison", gauges:[{ name:"Madison River below Hebgen Lake, MT", id:"06038500" }]},
+      { name:"Yellowstone", gauges:[{ name:"Yellowstone River at Livingston, MT", id:"06192500" }]}
+    ];
+
+    const state = { selected:"Blackfoot", data:{}, charts:{}, favorites: JSON.parse(localStorage.getItem("favorites") || "[]"), favoritesOnly:false };
+
+    const allGauges = () => RIVERS.flatMap(r => r.gauges.map(g => ({...g, river:r.name})));
+
+    function url(site, parameter){
+      return "https://waterservices.usgs.gov/nwis/iv/?" + new URLSearchParams({
+        format:"json", sites:site, parameterCd:parameter, period:"P7D", siteStatus:"all"
+      }).toString();
+    }
+    function cToF(c){ return c * 9 / 5 + 32; }
+    function series(json, temp=false){
+      return (json?.value?.timeSeries?.[0]?.values?.[0]?.value || [])
+        .map(p => ({ time:p.dateTime, value:Number(p.value) }))
+        .filter(p => Number.isFinite(p.value))
+        .map(p => ({ time:p.time, value: temp ? cToF(p.value) : p.value }));
+    }
+    async function fetchSeries(site, parameter, temp=false){
+      const res = await fetch(url(site, parameter));
+      if(!res.ok) throw new Error("USGS error");
+      return series(await res.json(), temp);
+    }
+    function latest(arr){ return arr?.length ? arr[arr.length-1] : null; }
+    function fmtFlow(v){ return Number.isFinite(v) ? Math.round(v).toLocaleString() + " CFS" : "--"; }
+    function fmtTemp(v){ return Number.isFinite(v) ? v.toFixed(1) + "°F" : "--"; }
+    function fmtTime(iso){ return iso ? new Date(iso).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Unavailable"; }
+    function fmtDate(iso){ const d = new Date(iso); return `${d.getMonth()+1}/${d.getDate()}`; }
+    function tempStatus(t){
+      if(!Number.isFinite(t)) return {label:"No temp", cls:"", dot:""};
+      if(t >= 67) return {label:"Too Hot", cls:"hot", dot:"status-hot"};
+      if(t >= 65) return {label:"Warm", cls:"warm", dot:"status-warm"};
+      return {label:"Good", cls:"good", dot:"status-good"};
+    }
+    function sample(arr, max=160){
+      if(arr.length <= max) return arr;
+      const step = Math.ceil(arr.length / max);
+      return arr.filter((_,i) => i % step === 0);
+    }
+
+    function renderTabs(){
+      const tabs = document.getElementById("tabs");
+      tabs.innerHTML = RIVERS.map(r => `<button class="tab ${r.name===state.selected?'active':''}" onclick="selectRiver('${r.name}')">${r.name}</button>`).join("");
+    }
+
+    function renderRiverCards(){
+      const grid = document.getElementById("riverGrid");
+      const rivers = state.favoritesOnly ? RIVERS.filter(r => r.gauges.some(g => state.favorites.includes(g.id))) : RIVERS;
+      grid.innerHTML = rivers.map(r => {
+        const gauges = r.gauges.map(g => state.data[g.id]).filter(Boolean);
+        const first = gauges[0];
+        const flow = latest(first?.flow || [])?.value;
+        const temps = gauges.map(g => latest(g.temp || [])?.value).filter(Number.isFinite);
+        const avgTemp = temps.length ? temps.reduce((a,b)=>a+b,0)/temps.length : NaN;
+        const st = tempStatus(avgTemp);
+        const favs = r.gauges.filter(g => state.favorites.includes(g.id)).length;
+        return `<article class="river-card ${r.name===state.selected?'selected':''}" onclick="selectRiver('${r.name}')">
+          <div class="river-title"><span>${r.name}</span><span>${favs ? "★" : "›"}</span></div>
+          <div class="river-sub">${r.gauges.length} gauge${r.gauges.length>1?'s':''}</div>
+          <div class="river-metrics">
+            <div class="mini"><div class="label">Main Flow</div><div class="value">${fmtFlow(flow)}</div></div>
+            <div class="mini"><div class="label">Water Temp</div><div class="value ${st.cls}">${fmtTemp(avgTemp)}</div></div>
+          </div>
+        </article>`;
+      }).join("") || `<div class="empty panel">No favorite gauges yet. Star a gauge below.</div>`;
+    }
+
+    function renderDetails(){
+      const root = document.getElementById("details");
+      const river = RIVERS.find(r => r.name === state.selected);
+      if(!river) return;
+      root.innerHTML = `
+        <div class="section-title">
+          <div><h2>${river.name}</h2><div class="muted">Live 7-day USGS flow and water temperature.</div></div>
+          <a class="pill" target="_blank" rel="noopener" href="https://radar.weather.gov/">Radar ↗</a>
+        </div>
+        <div class="gauge-grid">
+          ${river.gauges.map(g => gaugeHtml(g, river.name)).join("")}
+        </div>
+      `;
+      river.gauges.forEach(g => drawGauge(g.id));
+    }
+
+    function gaugeHtml(g, river){
+      const d = state.data[g.id] || {};
+      const f = latest(d.flow || []);
+      const t = latest(d.temp || []);
+      const st = tempStatus(t?.value);
+      const fav = state.favorites.includes(g.id);
+      return `<article class="panel gauge" id="gauge-${g.id}">
+        <div class="gauge-head">
+          <div>
+            <h3>${g.name}</h3>
+            <div class="muted">Updated: ${fmtTime(f?.time)}</div>
+          </div>
+          <button onclick="toggleFavorite('${g.id}'); event.stopPropagation();">${fav ? "★" : "☆"}</button>
+        </div>
+        <div class="gauge-metrics">
+          <div class="metric"><div class="label">Current Flow</div><div class="value">${fmtFlow(f?.value)}</div></div>
+          <div class="metric"><div class="label">Water Temp</div><div class="value ${st.cls}">${fmtTemp(t?.value)}</div></div>
+          <div class="metric"><div class="label">Condition</div><div class="value ${st.cls}"><span class="status-dot ${st.dot}"></span>${st.label}</div></div>
+        </div>
+        <div class="chart" id="chart-${g.id}"></div>
+        <div class="gauge-foot">
+          <span>${d.error ? "Could not load gauge." : (d.temp?.length ? "Temp line included." : "Temperature not reported here.")}</span>
+          <a href="https://waterdata.usgs.gov/monitoring-location/${g.id}/" target="_blank" rel="noopener">Live USGS Gauge ${g.id}</a>
+        </div>
+      </article>`;
+    }
+
+    function drawGauge(id){
+      const el = document.getElementById(`chart-${id}`);
+      if(!el || !state.data[id]?.flow?.length) return;
+      if(state.charts[id]) state.charts[id].dispose();
+      const chart = echarts.init(el);
+      state.charts[id] = chart;
+      const flow = sample(state.data[id].flow);
+      const temp = sample(state.data[id].temp || []);
+      const labels = flow.map(p => fmtDate(p.time));
+      const tempMap = new Map(temp.map(p => [fmtDate(p.time), p.value]));
+      chart.setOption({
+        backgroundColor:"transparent",
+        tooltip:{trigger:"axis", backgroundColor:"rgba(7,17,23,.95)", borderColor:"#203949", textStyle:{color:"#edf7fb"},
+          valueFormatter: v => Number.isFinite(v) ? v.toLocaleString() : "--"},
+        legend:{top:0,textStyle:{color:"#8da8b7"}},
+        grid:{left:52,right:temp.length?52:18,top:42,bottom:44},
+        dataZoom:[{type:"inside"},{type:"slider",height:18,bottom:8,borderColor:"#203949",backgroundColor:"rgba(255,255,255,.04)"}],
+        xAxis:{type:"category",data:labels,boundaryGap:false,axisLabel:{color:"#8da8b7"},axisLine:{lineStyle:{color:"#203949"}},axisTick:{show:false}},
+        yAxis:[
+          {type:"value",name:"CFS",nameTextStyle:{color:"#8da8b7"},axisLabel:{color:"#8da8b7"},splitLine:{lineStyle:{color:"rgba(255,255,255,.07)"}}},
+          {type:"value",name:"°F",show:!!temp.length,nameTextStyle:{color:"#8da8b7"},axisLabel:{color:"#8da8b7"},splitLine:{show:false}}
+        ],
+        series:[
+          {name:"Flow",type:"line",smooth:true,showSymbol:false,lineStyle:{width:2},areaStyle:{opacity:.08},data:flow.map(p => Math.round(p.value))},
+          ...(temp.length ? [{name:"Water Temp",type:"line",smooth:true,showSymbol:false,yAxisIndex:1,lineStyle:{width:2},data:labels.map(l => tempMap.get(l) ?? null)}] : [])
+        ]
+      });
+    }
+
+    async function loadGauge(g){
+      try{
+        const [flow,temp] = await Promise.allSettled([fetchSeries(g.id,"00060"), fetchSeries(g.id,"00010",true)]);
+        state.data[g.id] = {
+          flow: flow.status === "fulfilled" ? flow.value : [],
+          temp: temp.status === "fulfilled" ? temp.value : [],
+          error: flow.status !== "fulfilled"
+        };
+      }catch(e){ state.data[g.id] = {flow:[],temp:[],error:true}; }
+    }
+
+    async function refreshAll(){
+      document.getElementById("lastUpdated").textContent = "Refreshing live USGS data...";
+      await Promise.all(allGauges().map(loadGauge));
+      updateSummary();
+      renderTabs(); renderRiverCards(); renderDetails();
+      document.getElementById("lastUpdated").textContent = "Last refreshed " + new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+    }
+
+    function updateSummary(){
+      const gauges = allGauges();
+      const loaded = gauges.filter(g => state.data[g.id]?.flow?.length).length;
+      let cool=0,warm=0,hot=0;
+      gauges.forEach(g => {
+        const t = latest(state.data[g.id]?.temp || [])?.value;
+        if(!Number.isFinite(t)) return;
+        if(t >= 67) hot++; else if(t >= 65) warm++; else cool++;
+      });
+      document.getElementById("gaugeCount").textContent = `${gauges.length} gauges`;
+      document.getElementById("loadedCount").textContent = loaded;
+      document.getElementById("coolCount").textContent = cool;
+      document.getElementById("warmCount").textContent = warm;
+      document.getElementById("hotCount").textContent = hot;
+    }
+
+    function selectRiver(name){
+      state.selected = name;
+      renderTabs(); renderRiverCards(); renderDetails();
+      document.getElementById("details").scrollIntoView({behavior:"smooth",block:"start"});
+    }
+    function toggleFavorite(id){
+      state.favorites = state.favorites.includes(id) ? state.favorites.filter(x => x !== id) : [...state.favorites, id];
+      localStorage.setItem("favorites", JSON.stringify(state.favorites));
+      renderRiverCards(); renderDetails();
+    }
+    function showFavorites(){ state.favoritesOnly = true; renderRiverCards(); }
+    function showAllRivers(){ state.favoritesOnly = false; renderRiverCards(); }
+
+    window.addEventListener("resize", () => Object.values(state.charts).forEach(c => c.resize()));
+    renderTabs(); renderRiverCards(); renderDetails(); refreshAll();
+    setInterval(refreshAll, 10 * 60 * 1000);
+  </script>
+</body>
+</html>
