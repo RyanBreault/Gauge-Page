@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personal River Gauge Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #17212b;
+      --muted: #667085;
+      --line: #d7e0ea;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --amber: #d97706;
+      --red: #dc2626;
+      --shadow: 0 8px 24px rgba(16, 24, 40, .08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 28px 18px 12px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      align-items: center;
+    }
+
+    .button, select {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .button:hover {
+      border-color: #a7b3c2;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 12px 18px 40px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      min-height: 430px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    .updated {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: #f8fafc;
+      white-space: nowrap;
+    }
+
+    .metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 8px 0 12px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      min-width: 120px;
+      background: #fbfdff;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .temp-good { color: var(--green); }
+    .temp-warm { color: var(--amber); }
+    .temp-hot { color: var(--red); }
+
+    .chart-wrap {
+      height: 260px;
+      position: relative;
+    }
+
+    .footer {
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer a {
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .status-line {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .resources {
+      margin: 20px 0 0;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .resource {
+      display: block;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      text-decoration: none;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      font-weight: 700;
+    }
+
+    .resource span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+      margin-top: 4px;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 850px) {
+      .grid, .resources {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        min-height: 400px;
+      }
+
+      .chart-wrap {
+        height: 230px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>River Gauge Dashboard</h1>
+    <div class="subtitle">
+      Personal live USGS dashboard for Western Montana and nearby trout water.
+      Flow updates automatically. Temperature appears when the gauge reports it.
+    </div>
+
+    <div class="toolbar">
+      <button class="button" onclick="refreshAll()">Refresh Now</button>
+      <select id="riverFilter" onchange="filterRiver()">
+        <option value="all">Show all rivers</option>
+        <option value="Blackfoot">Blackfoot</option>
+        <option value="Bitterroot">Bitterroot</option>
+        <option value="Clark Fork">Clark Fork</option>
+        <option value="Rock Creek">Rock Creek</option>
+        <option value="Missouri">Missouri</option>
+        <option value="Gallatin">Gallatin</option>
+        <option value="Madison">Madison</option>
+        <option value="Yellowstone">Yellowstone</option>
+      </select>
+      <span class="status-line" id="globalStatus">Loading gauges...</span>
+    </div>
+
+    <div class="resources">
+      <a class="resource" href="https://fwp.mt.gov/buyandapply/fishing-licenses" target="_blank" rel="noopener">Fishing License<span>Montana FWP</span></a>
+      <a class="resource" href="https://fwp.mt.gov/news/current-closures-restrictions/waterbody-closures" target="_blank" rel="noopener">Restrictions<span>Closures and hoot owl rules</span></a>
+      <a class="resource" href="https://www.nrcs.usda.gov/wps/portal/wcc/home/quicklinks/imap" target="_blank" rel="noopener">Snowpack<span>NRCS interactive map</span></a>
+      <a class="resource" href="https://inciweb.wildfire.gov/" target="_blank" rel="noopener">Wildfire Map<span>InciWeb</span></a>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid" id="gaugeGrid"></div>
+  </main>
+
+  <script>
+    const GAUGES = [
+      { river: "Blackfoot", name: "Blackfoot River near Bonner, MT", id: "12340000" },
+      { river: "Blackfoot", name: "Blackfoot River near Helmville, MT", id: "12335100" },
+
+      { river: "Bitterroot", name: "Bitterroot River near Darby, MT", id: "12344000" },
+      { river: "Bitterroot", name: "Bitterroot River at Bell Crossing, MT", id: "12350250" },
+      { river: "Bitterroot", name: "Bitterroot River near Missoula, MT", id: "12352500" },
+
+      { river: "Rock Creek", name: "Rock Creek near Clinton, MT", id: "12334510" },
+      { river: "Rock Creek", name: "Middle Fork Rock Creek near Philipsburg, MT", id: "12332000" },
+
+      { river: "Clark Fork", name: "Clark Fork at Goldcreek, MT", id: "12324680" },
+      { river: "Clark Fork", name: "Clark Fork at Turah Bridge, MT", id: "12334550" },
+      { river: "Clark Fork", name: "Clark Fork above Missoula, MT", id: "12340500" },
+      { river: "Clark Fork", name: "Clark Fork below Missoula, MT", id: "12353000" },
+      { river: "Clark Fork", name: "Clark Fork at St. Regis, MT", id: "12354500" },
+
+      { river: "Missouri", name: "Missouri River below Holter Dam near Wolf Creek, MT", id: "06066500" },
+      { river: "Gallatin", name: "Gallatin River at Logan, MT", id: "06052500" },
+      { river: "Madison", name: "Madison River below Hebgen Lake, MT", id: "06038500" },
+      { river: "Yellowstone", name: "Yellowstone River at Livingston, MT", id: "06192500" }
+    ];
+
+    const charts = new Map();
+
+    function usgsUrl(site, parameter) {
+      return "https://waterservices.usgs.gov/nwis/iv/?" +
+        new URLSearchParams({
+          format: "json",
+          sites: site,
+          parameterCd: parameter,
+          period: "P7D",
+          siteStatus: "all"
+        }).toString();
+    }
+
+    function formatDateShort(iso) {
+      const date = new Date(iso);
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+
+    function formatTime(iso) {
+      return new Date(iso).toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    }
+
+    function cToF(c) {
+      return (c * 9 / 5) + 32;
+    }
+
+    function tempClass(tempF) {
+      if (tempF >= 67) return "temp-hot";
+      if (tempF >= 65) return "temp-warm";
+      return "temp-good";
+    }
+
+    function tempLabel(tempF) {
+      if (tempF >= 67) return "Too hot";
+      if (tempF >= 65) return "Warm";
+      return "Good";
+    }
+
+    function cleanSeries(json, convertTemp = false) {
+      const series = json?.value?.timeSeries?.[0]?.values?.[0]?.value || [];
+      return series
+        .map(point => ({
+          time: point.dateTime,
+          value: Number(point.value)
+        }))
+        .filter(point => Number.isFinite(point.value))
+        .map(point => ({
+          time: point.time,
+          value: convertTemp ? cToF(point.value) : point.value
+        }));
+    }
+
+    async function getSeries(site, parameter, convertTemp = false) {
+      const response = await fetch(usgsUrl(site, parameter));
+      if (!response.ok) throw new Error("USGS request failed");
+      const json = await response.json();
+      return cleanSeries(json, convertTemp);
+    }
+
+    function downsample(series, maxPoints = 120) {
+      if (series.length <= maxPoints) return series;
+      const step = Math.ceil(series.length / maxPoints);
+      return series.filter((_, index) => index % step === 0);
+    }
+
+    function makeCard(gauge) {
+      const card = document.createElement("section");
+      card.className = "card";
+      card.dataset.river = gauge.river;
+      card.innerHTML = `
+        <div class="card-header">
+          <div>
+            <h2 class="title">${gauge.name}</h2>
+            <div class="updated" id="updated-${gauge.id}">Updated: loading...</div>
+          </div>
+          <div class="badge">${gauge.river}</div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-label">Flow</div>
+            <div class="metric-value" id="flow-${gauge.id}">-- CFS</div>
+          </div>
+          <div class="metric" id="tempbox-${gauge.id}">
+            <div class="metric-label">Water Temp</div>
+            <div class="metric-value" id="temp-${gauge.id}">-- °F</div>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <canvas id="chart-${gauge.id}"></canvas>
+        </div>
+
+        <div class="footer">
+          <span id="note-${gauge.id}">Loading live data...</span>
+          <a href="https://waterdata.usgs.gov/monitoring-location/${gauge.id}/" target="_blank" rel="noopener">Live USGS Gauge ${gauge.id}</a>
+        </div>
+      `;
+
+      return card;
+    }
+
+    function drawChart(gauge, flow, temp) {
+      const canvas = document.getElementById(`chart-${gauge.id}`);
+      const flowSmall = downsample(flow);
+      const tempSmall = downsample(temp);
+
+      const labels = flowSmall.map(point => formatDateShort(point.time));
+      const flowValues = flowSmall.map(point => point.value);
+
+      const datasets = [
+        {
+          label: "Flow",
+          data: flowValues,
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.25,
+          yAxisID: "y"
+        }
+      ];
+
+      if (tempSmall.length) {
+        const tempByTime = new Map(tempSmall.map(point => [formatDateShort(point.time), point.value]));
+        datasets.push({
+          label: "Water Temp",
+          data: labels.map(label => tempByTime.get(label) ?? null),
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.25,
+          yAxisID: "y1"
+        });
+      }
+
+      if (charts.has(gauge.id)) charts.get(gauge.id).destroy();
+
+      charts.set(gauge.id, new Chart(canvas, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { display: true, labels: { boxWidth: 14 } },
+            tooltip: {
+              callbacks: {
+                label: context => {
+                  if (context.dataset.label === "Water Temp") return `Water Temp: ${context.parsed.y?.toFixed(1)}°F`;
+                  return `Flow: ${Math.round(context.parsed.y).toLocaleString()} CFS`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { maxTicksLimit: 8 }
+            },
+            y: {
+              title: { display: true, text: "CFS" },
+              beginAtZero: false
+            },
+            y1: {
+              display: tempSmall.length > 0,
+              position: "right",
+              title: { display: true, text: "°F" },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      }));
+    }
+
+    async function loadGauge(gauge) {
+      const flowEl = document.getElementById(`flow-${gauge.id}`);
+      const tempEl = document.getElementById(`temp-${gauge.id}`);
+      const tempBox = document.getElementById(`tempbox-${gauge.id}`);
+      const updatedEl = document.getElementById(`updated-${gauge.id}`);
+      const noteEl = document.getElementById(`note-${gauge.id}`);
+
+      try {
+        const [flow, temp] = await Promise.allSettled([
+          getSeries(gauge.id, "00060"),
+          getSeries(gauge.id, "00010", true)
+        ]);
+
+        const flowData = flow.status === "fulfilled" ? flow.value : [];
+        const tempData = temp.status === "fulfilled" ? temp.value : [];
+
+        if (!flowData.length) {
+          flowEl.textContent = "No data";
+          tempBox.classList.add("hidden");
+          updatedEl.textContent = "Updated: unavailable";
+          noteEl.textContent = "No recent flow data from USGS.";
+          return;
+        }
+
+        const latestFlow = flowData[flowData.length - 1];
+        flowEl.textContent = `${Math.round(latestFlow.value).toLocaleString()} CFS`;
+        updatedEl.textContent = `Updated: ${formatTime(latestFlow.time)}`;
+
+        if (tempData.length) {
+          const latestTemp = tempData[tempData.length - 1];
+          const cls = tempClass(latestTemp.value);
+          tempEl.className = `metric-value ${cls}`;
+          tempEl.textContent = `${latestTemp.value.toFixed(1)}°F`;
+          noteEl.textContent = `${tempLabel(latestTemp.value)} water temperature.`;
+          tempBox.classList.remove("hidden");
+        } else {
+          tempBox.classList.add("hidden");
+          noteEl.textContent = "Temperature not reported at this gauge.";
+        }
+
+        drawChart(gauge, flowData, tempData);
+      } catch (error) {
+        flowEl.textContent = "Error";
+        updatedEl.textContent = "Updated: unavailable";
+        noteEl.textContent = "Could not load this gauge.";
+        tempBox.classList.add("hidden");
+      }
+    }
+
+    function render() {
+      const grid = document.getElementById("gaugeGrid");
+      grid.innerHTML = "";
+      GAUGES.forEach(gauge => grid.appendChild(makeCard(gauge)));
+    }
+
+    async function refreshAll() {
+      const status = document.getElementById("globalStatus");
+      status.textContent = "Refreshing gauges...";
+      await Promise.all(GAUGES.map(loadGauge));
+      status.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+    }
+
+    function filterRiver() {
+      const value = document.getElementById("riverFilter").value;
+      document.querySelectorAll(".card").forEach(card => {
+        card.style.display = value === "all" || card.dataset.river === value ? "" : "none";
+      });
+    }
+
+    render();
+    refreshAll();
+    setInterval(refreshAll, 10 * 60 * 1000);
+  </script>
+</body>
+</html>
