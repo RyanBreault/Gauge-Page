@@ -1,6 +1,6 @@
-# Gauge Page Hatch Engine v3
+# Gauge Page Hatch Engine v4
 
-This version keeps the feature name as "Likely Hatches" and adds a more realistic hatch engine for Rock Creek.
+This version updates the Rock Creek hatch knowledge base to a year-round model.
 
 ## Upload these files/folders to GitHub
 
@@ -12,10 +12,9 @@ This version keeps the feature name as "Likely Hatches" and adds a more realisti
 - js/hatch-engine.js
 - js/hatches/rockcreek.js
 
-## New in v3
+## Rock Creek hatch updates
 
-- Salmonflies and Golden Stones use staged biological models.
-- Salmonflies have a calendar guard so they do not show as peak after the Rock Creek window has passed.
-- Golden Stones become the stronger big-bug signal after Salmonflies fade.
-- Hatch display uses star ratings and stage language instead of percentage bars.
-- The hatch panel still says "Likely Hatches."
+- Adds a year-round hatch structure.
+- Midges, BWOs, Skwalas, March Browns, Mother's Day Caddis, Salmonflies, Golden Stones, Green Drakes, PMDs, Yellow Sallies, Summer Caddis, Tricos, Terrestrials, and October Caddis are included.
+- Salmonflies and Golden Stones remain staged hatches.
+- Dates are used as context/guardrails; water temperature and conditions remain the main signal.

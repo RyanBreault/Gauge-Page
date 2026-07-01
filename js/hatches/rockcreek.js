@@ -1,30 +1,18 @@
 const ROCK_CREEK_HATCHES = [
   {
-    name: "Skwalas",
-    importance: 4,
-    confidence: "moderate",
-    season: ["spring"],
+    name: "Midges",
+    importance: 2,
+    confidence: "high",
+    season: ["winter", "spring", "fall"],
     model: "simple",
-    startTemp: 42,
-    idealTemp: [44, 49],
-    fadeTemp: 52,
-    position: "Lower first",
-    timeOfDay: "Afternoon",
-    notes: "One of the first important dry-fly opportunities on Rock Creek."
+    startTemp: 34,
+    idealTemp: [38, 46],
+    fadeTemp: 50,
+    position: "Slower water",
+    timeOfDay: "Midday",
+    notes: "Year-round baseline hatch during cold periods. Most useful in winter, early spring, and late fall during stable flows and mild midday warmth."
   },
-  {
-    name: "March Browns",
-    importance: 4,
-    confidence: "moderate",
-    season: ["spring"],
-    model: "simple",
-    startTemp: 45,
-    idealTemp: [48, 54],
-    fadeTemp: 57,
-    position: "Whole river",
-    timeOfDay: "Afternoon",
-    notes: "Good spring mayfly hatch when water temps are climbing."
-  },
+
   {
     name: "BWOs",
     importance: 3,
@@ -36,8 +24,37 @@ const ROCK_CREEK_HATCHES = [
     fadeTemp: 56,
     position: "Whole river",
     timeOfDay: "Cloudy afternoons",
-    notes: "Best on cloudy, cooler days."
+    notes: "Best on overcast, cool days. Important in spring and again in fall."
   },
+
+  {
+    name: "Skwalas",
+    importance: 4,
+    confidence: "moderate",
+    season: ["spring"],
+    model: "simple",
+    startTemp: 42,
+    idealTemp: [44, 50],
+    fadeTemp: 53,
+    position: "Lower first",
+    timeOfDay: "Afternoon",
+    notes: "One of the first important dry-fly opportunities on Rock Creek. Best during warming spring afternoons before runoff dominates."
+  },
+
+  {
+    name: "March Browns",
+    importance: 4,
+    confidence: "moderate",
+    season: ["spring"],
+    model: "simple",
+    startTemp: 45,
+    idealTemp: [48, 54],
+    fadeTemp: 57,
+    position: "Whole river",
+    timeOfDay: "Afternoon",
+    notes: "Good spring mayfly hatch when water temperatures are climbing and flows remain fishable."
+  },
+
   {
     name: "Mother's Day Caddis",
     importance: 5,
@@ -49,8 +66,9 @@ const ROCK_CREEK_HATCHES = [
     fadeTemp: 60,
     position: "Lower first",
     timeOfDay: "Afternoon / Evening",
-    notes: "Best when flows are not rising hard."
+    notes: "Can be excellent when flows are stable or dropping and clarity is improving. High or rapidly rising water can mute the hatch."
   },
+
   {
     name: "Salmonflies",
     importance: 5,
@@ -58,7 +76,7 @@ const ROCK_CREEK_HATCHES = [
     season: ["late_spring", "early_summer"],
     model: "staged",
     duration: "short",
-    position: "Lower first, then moves upstream",
+    position: "Lower canyon first, then upstream",
     timeOfDay: "Afternoon",
     replacedBy: "Golden Stones",
     calendarGuard: {
@@ -70,38 +88,44 @@ const ROCK_CREEK_HATCHES = [
     stages: [
       {
         name: "Pre-hatch / Nymph Migration",
-        tempRange: [52, 55],
+        tempRange: [50, 55],
         status: "Likely",
         stars: 3,
-        description: "Large stonefly nymphs are migrating toward shoreline rocks and vegetation. Excellent time to fish big stonefly nymphs."
+        description: "Large stonefly nymphs are migrating toward bankside rocks and vegetation. Big stonefly nymphs can be very effective."
       },
       {
         name: "Peak Emergence",
         tempRange: [55, 58],
         status: "Peak",
         stars: 5,
-        description: "Adult salmonflies are emerging. This is the prime dry-fly window."
+        description: "Adult salmonflies are emerging. This is the prime dry-fly window, especially where the hatch is currently centered."
       },
       {
         name: "Moving Upstream / Winding Down",
         tempRange: [58, 62],
         status: "Ending",
         stars: 3,
-        description: "The lower river is likely past peak while the hatch progresses upstream."
+        description: "The lower river is likely past peak while the hatch progresses upstream. Adult egg-laying may continue after the main emergence."
       }
     ],
     calendar: {
-      typicalStart: "May 28–June 2",
-      typicalPeak: "June 2–8",
-      typicalEnd: "June 10–15"
+      typicalWindow: "Late May–Mid June",
+      typicalStart: "May 30",
+      typicalPeak: "June 5–7",
+      typicalEnd: "June 13",
+      earlyYears: "2021 and 2025",
+      lateYear: "2022"
     },
     supportingConditions: [
-      "Dropping after runoff",
+      "Water temperatures around 50–55°F following dropping runoff",
+      "Dropping flows after runoff",
       "Water clarity improving",
-      "Daily highs above 65°F for several days"
+      "Consecutive warm days",
+      "Snowpack and runoff timing"
     ],
-    progression: "Begins near the mouth around Memorial Day and moves upstream. Adult females may continue laying eggs after the main emergence."
+    progression: "Starts in the lower canyon and progresses upstream roughly 1–2 miles per day. Early, warm springs advance it; prolonged runoff delays it."
   },
+
   {
     name: "Golden Stones",
     importance: 5,
@@ -143,33 +167,37 @@ const ROCK_CREEK_HATCHES = [
       }
     ],
     calendar: {
-      typicalStart: "June 3–8",
-      typicalPeak: "June 10–18",
-      typicalExcellent: "June 18–25",
-      typicalEnd: "Late June",
+      typicalWindow: "Early June–Late June",
+      typicalStart: "June 6",
+      typicalPeak: "June 13–16",
+      typicalEnd: "June 24",
+      stillExcellent: "June 18–25",
       stragglers: "Early July in the upper canyon"
     },
     supportingConditions: [
+      "Water temperatures around 55–60°F",
       "Stable or dropping flows after runoff",
       "Water clarity improving",
       "Daily highs above 70°F",
       "Salmonfly hatch beginning to fade"
     ],
-    progression: "Golden Stones gradually move upstream and often overlap with PMDs, Green Drakes, Yellow Sallies, and evening Caddis."
+    progression: "Golden Stones follow immediately behind Salmonflies, last longer, and often overlap with Green Drakes, PMDs, Yellow Sallies, and evening Caddis."
   },
+
   {
     name: "Green Drakes",
     importance: 4,
     confidence: "moderate",
     season: ["early_summer"],
     model: "simple",
-    startTemp: 50,
-    idealTemp: [52, 57],
-    fadeTemp: 60,
+    startTemp: 56,
+    idealTemp: [58, 62],
+    fadeTemp: 64,
     position: "Upper and middle river",
-    timeOfDay: "Late afternoon / Evening",
-    notes: "Often strongest on cool, overcast days near the end of runoff."
+    timeOfDay: "Afternoon / Evening",
+    notes: "Mid-June to early July hatch that often overlaps Golden Stones. Best during stable or dropping flows, especially on cool, cloudy, or humid afternoons."
   },
+
   {
     name: "PMDs",
     importance: 4,
@@ -180,22 +208,24 @@ const ROCK_CREEK_HATCHES = [
     idealTemp: [56, 62],
     fadeTemp: 66,
     position: "Whole river",
-    timeOfDay: "Late morning / Afternoon",
-    notes: "Important early summer mayfly hatch after runoff begins to settle."
+    timeOfDay: "Midday / Afternoon",
+    notes: "Consistent midday hatch during stable summer flows. Major part of the mid-June through July dry-fly mix."
   },
+
   {
     name: "Yellow Sallies",
     importance: 3,
     confidence: "high",
-    season: ["summer"],
+    season: ["early_summer", "summer"],
     model: "simple",
     startTemp: 56,
     idealTemp: [59, 65],
     fadeTemp: 69,
     position: "Whole river",
     timeOfDay: "Afternoon",
-    notes: "Reliable smaller summer stonefly hatch."
+    notes: "Small stoneflies active throughout the Golden Stone period and into July."
   },
+
   {
     name: "Summer Caddis",
     importance: 4,
@@ -207,8 +237,23 @@ const ROCK_CREEK_HATCHES = [
     fadeTemp: 70,
     position: "Whole river",
     timeOfDay: "Evening",
-    notes: "Evening caddis can be excellent once summer flows stabilize."
+    notes: "Evening emergences become increasingly important after runoff and often carry the fishing as stoneflies fade."
   },
+
+  {
+    name: "Tricos",
+    importance: 2,
+    confidence: "moderate",
+    season: ["summer"],
+    model: "simple",
+    startTemp: 60,
+    idealTemp: [63, 68],
+    fadeTemp: 72,
+    position: "Slower glides and softer water",
+    timeOfDay: "Morning",
+    notes: "Late July through August hatch. Best as calm morning spinner falls."
+  },
+
   {
     name: "Terrestrials",
     importance: 4,
@@ -218,10 +263,11 @@ const ROCK_CREEK_HATCHES = [
     startTemp: 60,
     idealTemp: [64, 72],
     fadeTemp: 75,
-    position: "Banks and grassy edges",
+    position: "Banks, grass edges, and pocket water",
     timeOfDay: "Afternoon",
-    notes: "Hoppers, ants, and beetles become more important in warm late-summer conditions."
+    notes: "Ants, beetles, and hoppers dominate as aquatic hatches decline from July into September."
   },
+
   {
     name: "October Caddis",
     importance: 3,
@@ -234,19 +280,6 @@ const ROCK_CREEK_HATCHES = [
     position: "Whole river",
     timeOfDay: "Afternoon / Evening",
     notes: "Large fall caddis. Often more useful as a searching pattern than a blanket hatch."
-  },
-  {
-    name: "Midges",
-    importance: 2,
-    confidence: "high",
-    season: ["winter", "spring", "fall"],
-    model: "simple",
-    startTemp: 34,
-    idealTemp: [38, 46],
-    fadeTemp: 50,
-    position: "Slower water",
-    timeOfDay: "Midday",
-    notes: "Most relevant in cold weather and early spring."
   }
 ];
 
