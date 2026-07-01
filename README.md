@@ -1,19 +1,13 @@
 # Gauge Page
 
-Personal river gauge dashboard.
+Current working version of the personal Montana river gauge dashboard.
 
-## Files
+Upload these files to GitHub:
 
-- `index.html` - main page
-- `css/style.css` - layout and design
-- `js/gauges.js` - river and gauge list
-- `js/charts.js` - ECharts graph setup
-- `js/app.js` - live USGS data loading and dashboard behavior
+- index.html
+- css/style.css
+- js/gauges.js
+- js/charts.js
+- js/app.js
 
-## Editing gauges
-
-To add or remove gauges later, edit only:
-
-`js/gauges.js`
-
-Then commit the change to GitHub.
+This version includes the curated gauge inventory, headline gauges, section headers for Clark Fork / Missouri / Yellowstone, automatic temperature filtering, and a favorites panel.

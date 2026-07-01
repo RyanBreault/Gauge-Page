@@ -10,8 +10,7 @@ function drawGauge(id){
   const tempMap = new Map(temp.map(p => [fmtDate(p.time), p.value]));
   chart.setOption({
     backgroundColor:"transparent",
-    tooltip:{trigger:"axis", backgroundColor:"rgba(7,17,23,.95)", borderColor:"#203949", textStyle:{color:"#edf7fb"},
-      valueFormatter: v => Number.isFinite(v) ? v.toLocaleString() : "--"},
+    tooltip:{trigger:"axis", backgroundColor:"rgba(7,17,23,.95)", borderColor:"#203949", textStyle:{color:"#edf7fb"}, valueFormatter: v => Number.isFinite(v) ? v.toLocaleString() : "--"},
     legend:{top:0,textStyle:{color:"#8da8b7"}},
     grid:{left:52,right:temp.length?52:18,top:42,bottom:44},
     dataZoom:[{type:"inside"},{type:"slider",height:18,bottom:8,borderColor:"#203949",backgroundColor:"rgba(255,255,255,.04)"}],
