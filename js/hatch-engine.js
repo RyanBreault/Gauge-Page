@@ -6,6 +6,14 @@ function currentSeason(){
   if(month >= 7 && month <= 8) return "summer";
   return "fall";
 }
+
+function isAfterMonthDay(monthDay){
+  const now = new Date();
+  const [month, day] = monthDay.split("-").map(Number);
+  const cutoff = new Date(now.getFullYear(), month - 1, day, 23, 59, 59);
+  return now > cutoff;
+}
+
 function seasonMatches(rule){
   const season = currentSeason();
   if(rule.season?.includes(season)) return true;
@@ -14,32 +22,211 @@ function seasonMatches(rule){
   if(season === "summer" && rule.season?.includes("early_summer")) return true;
   return false;
 }
-function scoreSimpleHatch(rule,tempF){
-  if(!Number.isFinite(tempF)) return null;
-  const inSeason=seasonMatches(rule); const seasonScore=inSeason?25:0;
-  let tempScore=0; const [idealLow,idealHigh]=rule.idealTemp;
-  if(tempF>=idealLow && tempF<=idealHigh) tempScore=75;
-  else if(tempF>=rule.startTemp && tempF<idealLow) tempScore=45+((tempF-rule.startTemp)/(idealLow-rule.startTemp))*30;
-  else if(tempF>idealHigh && tempF<=rule.fadeTemp) tempScore=75-((tempF-idealHigh)/(rule.fadeTemp-idealHigh))*35;
-  const score=Math.round(seasonScore+tempScore);
-  let status="Unlikely"; if(score>=85) status="Excellent"; else if(score>=70) status="Likely"; else if(score>=50) status="Possible";
-  return {...rule,score,status,stageName:status,stageDescription:rule.notes||"",hatchModel:"simple"};
+
+function stars(count){
+  const n = Math.max(1, Math.min(5, count || 1));
+  return "★★★★★".slice(0,n) + "☆☆☆☆☆".slice(0,5-n);
 }
-function scoreStagedHatch(rule,tempF){
+
+function scoreSimpleHatch(rule, tempF){
   if(!Number.isFinite(tempF)) return null;
-  const inSeason=seasonMatches(rule); let bestStage=null;
-  for(const stage of rule.stages||[]){ const [low,high]=stage.tempRange; if(tempF>=low && tempF<=high){ bestStage=stage; break; } }
-  if(!bestStage){ const first=rule.stages?.[0]; if(first && tempF>=first.tempRange[0]-2 && tempF<first.tempRange[0]) bestStage={...first,name:"Approaching",status:"Possible",description:`Conditions are approaching the ${rule.name} window. ${first.description}`}; }
+
+  const inSeason = seasonMatches(rule);
+  const [idealLow, idealHigh] = rule.idealTemp;
+
+  let tempFit = 0;
+  let stageName = "Possible";
+  let status = "Possible";
+
+  if(tempF >= idealLow && tempF <= idealHigh){
+    tempFit = 1;
+    stageName = "Prime conditions";
+    status = "Likely";
+  } else if(tempF >= rule.startTemp && tempF < idealLow){
+    tempFit = 0.55 + ((tempF - rule.startTemp) / (idealLow - rule.startTemp)) * 0.4;
+    stageName = "Starting";
+    status = "Beginning";
+  } else if(tempF > idealHigh && tempF <= rule.fadeTemp){
+    tempFit = 0.5 + (1 - ((tempF - idealHigh) / (rule.fadeTemp - idealHigh))) * 0.35;
+    stageName = "Winding down";
+    status = "Ending";
+  } else if(tempF >= rule.startTemp - 2 && tempF < rule.startTemp){
+    tempFit = 0.35;
+    stageName = "Coming soon";
+    status = "Coming Soon";
+  } else {
+    return null;
+  }
+
+  if(!inSeason) tempFit *= 0.65;
+
+  const score = Math.round(tempFit * 100);
+  const starCount = score >= 85 ? 5 : score >= 70 ? 4 : score >= 55 ? 3 : score >= 40 ? 2 : 1;
+
+  return {
+    ...rule,
+    score,
+    status,
+    stageName,
+    stageDescription: rule.notes || "",
+    starCount,
+    comingSoon: status === "Coming Soon",
+    hatchModel: "simple",
+    why: [
+      `Water temp ${fmtTemp(tempF)}`,
+      `Ideal ${rule.idealTemp[0]}–${rule.idealTemp[1]}°F`,
+      inSeason ? "Seasonal window is open" : "Outside normal seasonal window"
+    ]
+  };
+}
+
+function scoreStagedHatch(rule, tempF){
+  if(!Number.isFinite(tempF)) return null;
+
+  if(rule.calendarGuard?.pastAfter && isAfterMonthDay(rule.calendarGuard.pastAfter)){
+    const guard = rule.calendarGuard;
+    return {
+      ...rule,
+      score: 30,
+      status: guard.pastStatus || "Past",
+      stageName: guard.pastStage || "Past",
+      stageDescription: guard.pastDescription || `${rule.name} is likely past for the season.`,
+      starCount: 1,
+      hideFromPrimary: true,
+      hatchModel: "staged",
+      why: [
+        `Normal Rock Creek window has passed`,
+        `Water temp ${fmtTemp(tempF)}`,
+        rule.replacedBy ? `Better signal: ${rule.replacedBy}` : "Hatch is likely past"
+      ]
+    };
+  }
+
+  const inSeason = seasonMatches(rule);
+  let bestStage = null;
+
+  for(const stage of rule.stages || []){
+    const [low, high] = stage.tempRange;
+    if(tempF >= low && tempF <= high){
+      bestStage = stage;
+      break;
+    }
+  }
+
+  if(!bestStage){
+    const first = rule.stages?.[0];
+    if(first && tempF >= first.tempRange[0] - 2 && tempF < first.tempRange[0]){
+      bestStage = {
+        ...first,
+        name: "Coming Soon",
+        status: "Coming Soon",
+        stars: 2,
+        description: `Conditions are approaching the ${rule.name} window. ${first.description}`
+      };
+    }
+  }
+
   if(!bestStage) return null;
-  const stageBase={"Not Started":45,"Possible":50,"Likely":70,"Beginning":78,"Peak":95,"Excellent":95,"Ending":65};
-  const score=Math.min(100,Math.max(0,(stageBase[bestStage.status]??70)+(inSeason?5:-20)));
-  return {...rule,score,status:bestStage.status,stageName:bestStage.name,stageDescription:bestStage.description,hatchModel:"staged"};
+
+  const statusBase = {
+    "Coming Soon": 45,
+    "Not Started": 40,
+    "Likely": 70,
+    "Beginning": 78,
+    "Peak": 95,
+    "Excellent": 95,
+    "Ending": 62,
+    "Past": 25
+  };
+
+  const base = statusBase[bestStage.status] ?? 70;
+  const score = Math.min(100, Math.max(0, base + (inSeason ? 5 : -15)));
+  const starCount = bestStage.stars || (score >= 85 ? 5 : score >= 70 ? 4 : score >= 55 ? 3 : score >= 40 ? 2 : 1);
+
+  return {
+    ...rule,
+    score,
+    status: bestStage.status,
+    stageName: bestStage.name,
+    stageDescription: bestStage.description,
+    starCount,
+    comingSoon: bestStage.status === "Coming Soon" || bestStage.status === "Not Started",
+    hatchModel: "staged",
+    why: [
+      `Water temp ${fmtTemp(tempF)}`,
+      `Stage range ${bestStage.tempRange[0]}–${bestStage.tempRange[1]}°F`,
+      inSeason ? "Seasonal window is open" : "Outside normal seasonal window",
+      ...(rule.supportingConditions ? rule.supportingConditions.slice(0,2) : [])
+    ]
+  };
 }
-function scoreHatch(rule,tempF){ return rule.stages ? scoreStagedHatch(rule,tempF) : scoreSimpleHatch(rule,tempF); }
+
+function scoreHatch(rule, tempF){
+  if(rule.model === "staged" || rule.stages) return scoreStagedHatch(rule, tempF);
+  return scoreSimpleHatch(rule, tempF);
+}
+
 function renderHatchPanel(river){
-  const rules=window.HATCH_DATABASE?.[river.name]; if(!rules) return "";
-  const headline=getHeadlineGauge(river); const temp=latest(state.data[headline?.id]?.temp||[])?.value;
-  if(!Number.isFinite(temp)) return `<div class="panel hatch-panel"><h3>Likely Hatches</h3><p class="muted">Waiting for a valid water temperature from the headline gauge.</p></div>`;
-  const hatches=rules.map(r=>scoreHatch(r,temp)).filter(Boolean).filter(h=>h.score>=45).sort((a,b)=>b.score-a.score||b.importance-a.importance).slice(0,6);
-  return `<div class="panel hatch-panel"><div class="hatch-head"><div><h3>Likely Hatches</h3><p class="muted">Based on ${headline.name.replace(", MT","")} at ${fmtTemp(temp)}</p></div></div><div class="hatch-list">${hatches.map(h=>`<div class="hatch-card ${h.hatchModel==="staged"?"staged-hatch":""}"><div class="hatch-top"><strong>${h.name}</strong><span>${h.status}</span></div><div class="hatch-bar"><div style="width:${h.score}%"></div></div><div class="hatch-stage">${h.stageName||h.status}</div><div class="hatch-meta">${h.position||"River-wide"} • ${h.timeOfDay||"Varies"}</div>${h.stageDescription?`<div class="hatch-note">${h.stageDescription}</div>`:""}${h.replacedBy?`<div class="hatch-meta">Next signal: ${h.replacedBy}</div>`:""}</div>`).join("")||`<p class="muted">No strong hatch signals right now.</p>`}</div></div>`;
+  const rules = window.HATCH_DATABASE?.[river.name];
+  if(!rules) return "";
+
+  const headline = getHeadlineGauge(river);
+  const temp = latest(state.data[headline?.id]?.temp || [])?.value;
+
+  if(!Number.isFinite(temp)){
+    return `<div class="panel hatch-panel">
+      <h3>Likely Hatches</h3>
+      <p class="muted">Waiting for a valid water temperature from the headline gauge.</p>
+    </div>`;
+  }
+
+  const scored = rules
+    .map(rule => scoreHatch(rule, temp))
+    .filter(Boolean)
+    .sort((a,b) => b.score - a.score || b.importance - a.importance);
+
+  const primary = scored
+    .filter(h => !h.comingSoon && !h.hideFromPrimary && h.score >= 45)
+    .slice(0,5);
+
+  const comingSoon = scored
+    .filter(h => h.comingSoon || h.hideFromPrimary)
+    .slice(0,3);
+
+  return `<div class="panel hatch-panel">
+    <div class="hatch-head">
+      <div>
+        <h3>Likely Hatches</h3>
+        <p class="muted">Based on ${headline.name.replace(", MT","")} at ${fmtTemp(temp)}</p>
+      </div>
+    </div>
+
+    <div class="hatch-list">
+      ${primary.map(renderHatchCard).join("") || `<p class="muted">No strong hatch signals right now.</p>`}
+    </div>
+
+    ${comingSoon.length ? `
+      <div class="hatch-divider">Coming Soon / Past Signals</div>
+      <div class="hatch-list">
+        ${comingSoon.map(h => renderHatchCard(h, true)).join("")}
+      </div>
+    ` : ""}
+  </div>`;
+}
+
+function renderHatchCard(h, secondary=false){
+  return `<div class="hatch-card ${secondary ? "coming-soon" : "primary"}">
+    <div class="hatch-top">
+      <strong>${h.name}</strong>
+      <span class="hatch-pill ${secondary ? "warning" : ""}">${h.status}</span>
+    </div>
+    <div class="hatch-stars">${stars(h.starCount)}</div>
+    <div class="hatch-stage">${h.stageName || h.status}</div>
+    <div class="hatch-meta">${h.position || "River-wide"} • ${h.timeOfDay || "Varies"} • Confidence: ${h.confidence || "moderate"}</div>
+    ${h.stageDescription ? `<div class="hatch-note">${h.stageDescription}</div>` : ""}
+    <div class="hatch-why">
+      ${(h.why || []).map(item => `<div>✓ ${item}</div>`).join("")}
+    </div>
+    ${h.replacedBy ? `<div class="hatch-meta" style="margin-top:8px;">Next signal: ${h.replacedBy}</div>` : ""}
+  </div>`;
 }
