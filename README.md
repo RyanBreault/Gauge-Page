@@ -1,13 +1,9 @@
-# Gauge Page
+# Gauge Page Hatch Engine v2
 
-Current working version of the personal Montana river gauge dashboard.
+Upload all files/folders in this package to GitHub.
 
-Upload these files to GitHub:
+New files:
+- js/hatch-engine.js
+- js/hatches/rockcreek.js
 
-- index.html
-- css/style.css
-- js/gauges.js
-- js/charts.js
-- js/app.js
-
-This version includes the curated gauge inventory, headline gauges, section headers for Clark Fork / Missouri / Yellowstone, automatic temperature filtering, and a favorites panel.
+This version adds stage-based Rock Creek Salmonfly and Golden Stone hatch logic.

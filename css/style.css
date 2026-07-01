@@ -53,6 +53,11 @@ button:hover,.pill:hover{background:rgba(255,255,255,.1)}
 .gauge-metrics{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.metric{min-width:125px;flex:1;padding:12px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08)}.metric .label{color:var(--muted);font-size:12px}.metric .value{font-size:24px;font-weight:950;letter-spacing:-.04em;margin-top:4px}.chart{height:250px;width:100%}
 .gauge-foot{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:12px;margin-top:10px}.gauge-foot a{color:var(--blue);font-weight:800;text-decoration:none}
 .good{color:var(--green)} .warm{color:var(--amber)} .hot{color:var(--red)}.status-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px}.status-good{background:var(--green)} .status-warm{background:var(--amber)} .status-hot{background:var(--red)}.empty{color:var(--muted);padding:24px;text-align:center}
+
+.hatch-stage{font-weight:800;font-size:13px;margin:8px 0 4px;}
+.hatch-note{color:var(--muted);font-size:12px;line-height:1.35;margin-top:8px;}
+.staged-hatch{border-color:rgba(71,209,140,.22);}
+
 @media(max-width:980px){.hero{grid-template-columns:1fr}.river-grid,.favorite-list{grid-template-columns:repeat(2,1fr)}.gauge-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.head-inner{display:block}.actions{justify-content:flex-start;margin-top:14px}.river-grid,.stats,.favorite-list{grid-template-columns:1fr}.wrap{padding-left:12px;padding-right:12px}.gauge{padding:14px}.chart{height:230px}}
 
