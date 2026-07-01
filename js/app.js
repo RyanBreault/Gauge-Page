@@ -1,0 +1,177 @@
+const state = {
+  selected:"Blackfoot",
+  data:{},
+  charts:{},
+  favorites: JSON.parse(localStorage.getItem("favorites") || "[]"),
+  favoritesOnly:false
+};
+
+const allGauges = () => RIVERS.flatMap(r => r.gauges.map(g => ({...g, river:r.name})));
+
+function url(site, parameter){
+  return "https://waterservices.usgs.gov/nwis/iv/?" + new URLSearchParams({
+    format:"json", sites:site, parameterCd:parameter, period:"P7D", siteStatus:"all"
+  }).toString();
+}
+function cToF(c){ return c * 9 / 5 + 32; }
+function series(json, temp=false){
+  return (json?.value?.timeSeries?.[0]?.values?.[0]?.value || [])
+    .map(p => ({ time:p.dateTime, value:Number(p.value) }))
+    .filter(p => Number.isFinite(p.value))
+    .map(p => ({ time:p.time, value: temp ? cToF(p.value) : p.value }));
+}
+async function fetchSeries(site, parameter, temp=false){
+  const res = await fetch(url(site, parameter));
+  if(!res.ok) throw new Error("USGS error");
+  return series(await res.json(), temp);
+}
+function latest(arr){ return arr?.length ? arr[arr.length-1] : null; }
+function fmtFlow(v){ return Number.isFinite(v) ? Math.round(v).toLocaleString() + " CFS" : "--"; }
+function fmtTemp(v){ return Number.isFinite(v) ? v.toFixed(1) + "°F" : "--"; }
+function fmtTime(iso){ return iso ? new Date(iso).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Unavailable"; }
+function fmtDate(iso){ const d = new Date(iso); return `${d.getMonth()+1}/${d.getDate()}`; }
+function tempStatus(t){
+  if(!Number.isFinite(t)) return {label:"No temp", cls:"", dot:""};
+  if(t >= 67) return {label:"Too Hot", cls:"hot", dot:"status-hot"};
+  if(t >= 65) return {label:"Warm", cls:"warm", dot:"status-warm"};
+  return {label:"Good", cls:"good", dot:"status-good"};
+}
+function sample(arr, max=160){
+  if(arr.length <= max) return arr;
+  const step = Math.ceil(arr.length / max);
+  return arr.filter((_,i) => i % step === 0);
+}
+
+function renderTabs(){
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = RIVERS.map(r => `<button class="tab ${r.name===state.selected?'active':''}" onclick="selectRiver('${r.name}')">${r.name}</button>`).join("");
+}
+
+function renderRiverCards(){
+  const grid = document.getElementById("riverGrid");
+  const rivers = state.favoritesOnly ? RIVERS.filter(r => r.gauges.some(g => state.favorites.includes(g.id))) : RIVERS;
+  grid.innerHTML = rivers.map(r => {
+    const gauges = r.gauges.map(g => state.data[g.id]).filter(Boolean);
+    const first = gauges[0];
+    const flow = latest(first?.flow || [])?.value;
+    const temps = gauges.map(g => latest(g.temp || [])?.value).filter(Number.isFinite);
+    const avgTemp = temps.length ? temps.reduce((a,b)=>a+b,0)/temps.length : NaN;
+    const st = tempStatus(avgTemp);
+    const favs = r.gauges.filter(g => state.favorites.includes(g.id)).length;
+    return `<article class="river-card ${r.name===state.selected?'selected':''}" onclick="selectRiver('${r.name}')">
+      <div class="river-title"><span>${r.name}</span><span>${favs ? "★" : "›"}</span></div>
+      <div class="river-sub">${r.gauges.length} gauge${r.gauges.length>1?'s':''}</div>
+      <div class="river-metrics">
+        <div class="mini"><div class="label">Upper Gauge Flow</div><div class="value">${fmtFlow(flow)}</div></div>
+        <div class="mini"><div class="label">Avg Temp</div><div class="value ${st.cls}">${fmtTemp(avgTemp)}</div></div>
+      </div>
+    </article>`;
+  }).join("") || `<div class="empty panel">No favorite gauges yet. Star a gauge below.</div>`;
+}
+
+function renderDetails(){
+  const root = document.getElementById("details");
+  const river = RIVERS.find(r => r.name === state.selected);
+  if(!river) return;
+  root.innerHTML = `
+    <div class="section-title">
+      <div><h2>${river.name}</h2><div class="muted">Live 7-day USGS flow and water temperature.</div></div>
+      <a class="pill" target="_blank" rel="noopener" href="https://radar.weather.gov/">Radar ↗</a>
+    </div>
+    <div class="gauge-grid">
+      ${river.gauges.map(g => gaugeHtml(g, river.name)).join("")}
+    </div>
+  `;
+  river.gauges.forEach(g => drawGauge(g.id));
+}
+
+function gaugeHtml(g, river){
+  const d = state.data[g.id] || {};
+  const f = latest(d.flow || []);
+  const t = latest(d.temp || []);
+  const st = tempStatus(t?.value);
+  const fav = state.favorites.includes(g.id);
+  return `<article class="panel gauge" id="gauge-${g.id}">
+    <div class="gauge-head">
+      <div>
+        <h3>${g.name}</h3>
+        <div class="muted">Updated: ${fmtTime(f?.time)}</div>
+      </div>
+      <button onclick="toggleFavorite('${g.id}'); event.stopPropagation();">${fav ? "★" : "☆"}</button>
+    </div>
+    <div class="gauge-metrics">
+      <div class="metric"><div class="label">Current Flow</div><div class="value">${fmtFlow(f?.value)}</div></div>
+      <div class="metric"><div class="label">Water Temp</div><div class="value ${st.cls}">${fmtTemp(t?.value)}</div></div>
+      <div class="metric"><div class="label">Condition</div><div class="value ${st.cls}"><span class="status-dot ${st.dot}"></span>${st.label}</div></div>
+    </div>
+    <div class="chart" id="chart-${g.id}"></div>
+    <div class="gauge-foot">
+      <span>${d.error ? "Could not load gauge." : (d.temp?.length ? "Temp line included." : "Temperature not reported here.")}</span>
+      <a href="https://waterdata.usgs.gov/monitoring-location/${g.id}/" target="_blank" rel="noopener">Live USGS Gauge ${g.id}</a>
+    </div>
+  </article>`;
+}
+
+async function loadGauge(g){
+  try{
+    const [flow,temp] = await Promise.allSettled([fetchSeries(g.id,"00060"), fetchSeries(g.id,"00010",true)]);
+    state.data[g.id] = {
+      flow: flow.status === "fulfilled" ? flow.value : [],
+      temp: temp.status === "fulfilled" ? temp.value : [],
+      error: flow.status !== "fulfilled"
+    };
+  }catch(e){
+    state.data[g.id] = {flow:[],temp:[],error:true};
+  }
+}
+
+async function refreshAll(){
+  document.getElementById("lastUpdated").textContent = "Refreshing live USGS data...";
+  await Promise.all(allGauges().map(loadGauge));
+  updateSummary();
+  renderTabs();
+  renderRiverCards();
+  renderDetails();
+  document.getElementById("lastUpdated").textContent = "Last refreshed " + new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+}
+
+function updateSummary(){
+  const gauges = allGauges();
+  const loaded = gauges.filter(g => state.data[g.id]?.flow?.length).length;
+  let cool=0,warm=0,hot=0;
+  gauges.forEach(g => {
+    const t = latest(state.data[g.id]?.temp || [])?.value;
+    if(!Number.isFinite(t)) return;
+    if(t >= 67) hot++;
+    else if(t >= 65) warm++;
+    else cool++;
+  });
+  document.getElementById("gaugeCount").textContent = `${gauges.length} gauges`;
+  document.getElementById("loadedCount").textContent = loaded;
+  document.getElementById("coolCount").textContent = cool;
+  document.getElementById("warmCount").textContent = warm;
+  document.getElementById("hotCount").textContent = hot;
+}
+
+function selectRiver(name){
+  state.selected = name;
+  renderTabs();
+  renderRiverCards();
+  renderDetails();
+  document.getElementById("details").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function toggleFavorite(id){
+  state.favorites = state.favorites.includes(id) ? state.favorites.filter(x => x !== id) : [...state.favorites, id];
+  localStorage.setItem("favorites", JSON.stringify(state.favorites));
+  renderRiverCards();
+  renderDetails();
+}
+function showFavorites(){ state.favoritesOnly = true; renderRiverCards(); }
+function showAllRivers(){ state.favoritesOnly = false; renderRiverCards(); }
+
+window.addEventListener("resize", () => Object.values(state.charts).forEach(c => c.resize()));
+renderTabs();
+renderRiverCards();
+renderDetails();
+refreshAll();
+setInterval(refreshAll, 10 * 60 * 1000);
