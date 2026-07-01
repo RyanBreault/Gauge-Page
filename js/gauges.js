@@ -25,7 +25,9 @@ const RIVERS = [
     { name:"Clark Fork near Plains, MT", id:"12389000" }
   ]},
   { name:"Flint Creek", gauges:[
-    { name:"Flint Creek near Drummond, MT", id:"12331500" }
+    { name:"Flint Creek near Southern Cross, MT", id:"12325500" },
+{ name:"Flint Creek at Maxville, MT", id:"12329500" },
+{ name:"Flint Creek near Drummond, MT", id:"12331500" }
   ]},
   { name:"Beaverhead", gauges:[
     { name:"Beaverhead River at Barretts, MT", id:"06016000" },
