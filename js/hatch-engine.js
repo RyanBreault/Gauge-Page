@@ -48,7 +48,7 @@ function gaugeZone(river, gauge){
   }
 
   if(river.name === "Rock Creek"){
-    if(n.includes("Middle Fork")) return "Upper Rock Creek";
+    if(n.includes("Middle Fork")) return "Middle / Upper Rock Creek";
     if(n.includes("Clinton")) return "Lower Rock Creek";
   }
 
@@ -159,11 +159,15 @@ function scoreStagedHatch(rule, tempF){
   const statusBase = {
     "Coming Soon": 45,
     "Not Started": 40,
+    "Starting": 62,
+    "Building": 78,
     "Likely": 70,
     "Beginning": 78,
     "Peak": 95,
     "Excellent": 95,
+    "Declining": 58,
     "Ending": 62,
+    "Mostly Finished": 38,
     "Past": 25
   };
 

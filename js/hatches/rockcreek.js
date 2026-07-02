@@ -76,54 +76,100 @@ const ROCK_CREEK_HATCHES = [
     season: ["late_spring", "early_summer"],
     model: "staged",
     duration: "short",
-    position: "Lower canyon first, then upstream",
+    position: "Lower first; middle follows 3–5 days later; upper follows 5–10 days later",
     timeOfDay: "Afternoon",
     replacedBy: "Golden Stones",
     calendarGuard: {
       pastAfter: "06-20",
       pastStatus: "Past",
       pastStage: "Past",
-      pastDescription: "Salmonflies are generally past on Rock Creek by this point. Golden Stones are usually the better big-bug signal now."
+      pastDescription: "Salmonflies are generally past on Rock Creek by this point, except for possible upper-creek stragglers in cooler years. Golden Stones are usually the better big-bug signal now."
     },
+    sectionProgression: {
+      lower: "First",
+      middle: "3–5 days behind lower river",
+      upper: "5–10 days behind lower river",
+      notes: "Rock Creek Fisherman's Mercantile reported the upper half beginning about one week after the lower river in 2026."
+    },
+    statuses: [
+      "Not Started",
+      "Starting",
+      "Building",
+      "Peak",
+      "Declining",
+      "Mostly Finished",
+      "Past"
+    ],
     stages: [
       {
-        name: "Pre-hatch / Nymph Migration",
-        tempRange: [50, 55],
-        status: "Likely",
+        name: "Starting / Nymph Migration",
+        tempRange: [50, 54],
+        status: "Starting",
         stars: 3,
-        description: "Large stonefly nymphs are migrating toward bankside rocks and vegetation. Big stonefly nymphs can be very effective."
+        description: "Large stonefly nymphs are moving toward bankside rocks and vegetation. Big stonefly nymphs can be very effective."
       },
       {
-        name: "Peak Emergence",
+        name: "Building",
+        tempRange: [54, 55],
+        status: "Building",
+        stars: 4,
+        description: "Conditions are lining up for emergence. Watch lower Rock Creek first, especially after consecutive warm days and stable runoff."
+      },
+      {
+        name: "Peak",
         tempRange: [55, 58],
         status: "Peak",
         stars: 5,
-        description: "Adult salmonflies are emerging. This is the prime dry-fly window, especially where the hatch is currently centered."
+        description: "Prime Salmonfly emergence window. Adult dry-fly fishing can be excellent where the hatch is currently centered."
       },
       {
-        name: "Moving Upstream / Winding Down",
-        tempRange: [58, 62],
-        status: "Ending",
+        name: "Declining / Moving Upstream",
+        tempRange: [58, 61],
+        status: "Declining",
         stars: 3,
-        description: "The lower river is likely past peak while the hatch progresses upstream. Adult egg-laying may continue after the main emergence."
+        description: "The hatch is likely fading on the lower river and moving upstream. Golden Stones usually become the stronger lower-river signal."
+      },
+      {
+        name: "Mostly Finished",
+        tempRange: [61, 64],
+        status: "Mostly Finished",
+        stars: 2,
+        description: "The main lower-river hatch is likely over. Look higher in the drainage for remaining Salmonfly activity, while Golden Stones take over downstream."
       }
     ],
     calendar: {
-      typicalWindow: "Late May–Mid June",
-      typicalStart: "May 30",
-      typicalPeak: "June 5–7",
-      typicalEnd: "June 13",
-      earlyYears: "2021 and 2025",
-      lateYear: "2022"
+      typicalWindow: "Second half of May through mid-June",
+      earliestRecentStart: "Around May 23",
+      typicalFirstBugs: "May 24–31",
+      typicalPeak: "Late May through first week of June",
+      effectiveEnd: "June 12–16",
+      upperCreekStragglers: "June 18–20 in cooler years",
+      historicalReconstruction: [
+        { year: 2016, start: "May 31–Jun 2", peak: "Jun 5–9", finish: "Jun 14–16" },
+        { year: 2017, start: "Jun 2–4", peak: "Jun 7–11", finish: "Jun 15–17" },
+        { year: 2018, start: "May 28–31", peak: "Jun 3–7", finish: "Jun 11–14" },
+        { year: 2019, start: "Jun 1–4", peak: "Jun 6–10", finish: "Jun 14–16" },
+        { year: 2020, start: "May 27–30", peak: "Jun 2–6", finish: "Jun 10–13" },
+        { year: 2021, start: "May 25–28", peak: "May 31–Jun 4", finish: "Jun 8–11" },
+        { year: 2022, start: "Jun 8–10", peak: "Jun 12–16", finish: "Jun 20–23" },
+        { year: 2023, start: "Jun 1–3", peak: "Jun 5–9", finish: "Jun 13–15" },
+        { year: 2024, start: "May 26–29", peak: "May 31–Jun 5", finish: "Jun 10–12" },
+        { year: 2025, start: "May 24–27", peak: "May 29–Jun 3", finish: "Jun 7–10" },
+        { year: 2026, start: "~May 23", peak: "Late May–Early Jun", finish: "TBD" }
+      ]
     },
-    supportingConditions: [
-      "Water temperatures around 50–55°F following dropping runoff",
-      "Dropping flows after runoff",
-      "Water clarity improving",
-      "Consecutive warm days",
-      "Snowpack and runoff timing"
+    observedConditions: [
+      "2025: Hatch began around Memorial Day. Flow around 1600–1700 CFS. Water 51–58°F. Stable runoff.",
+      "2026: Hatch began around May 23. Flow around 1100–1300 CFS. Water highs 54–56°F. River had bottomed then began rising."
     ],
-    progression: "Starts in the lower canyon and progresses upstream roughly 1–2 miles per day. Early, warm springs advance it; prolonged runoff delays it."
+    supportingConditions: [
+      "Water temperatures roughly 54–58°F",
+      "Consecutive warm days",
+      "Night lows above about 48–50°F",
+      "Stable or slowly changing runoff",
+      "Accumulated spring warming"
+    ],
+    progression: "Lower river hatches first. Middle follows about 3–5 days later. Upper follows about 5–10 days later."
   },
 
   {

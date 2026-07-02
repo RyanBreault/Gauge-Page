@@ -32,3 +32,10 @@ This version updates the Rock Creek hatch knowledge base to a year-round model.
 - Hatch engine now evaluates all gauges on a river that have valid water temperature.
 - Hatch cards keep one river-level panel, but show the likely location based on gauge readings.
 - Cards show which gauges support the call in the Why section.
+
+
+## v7 update
+
+- Updates Rock Creek Salmonfly parameters from the dedicated Salmonfly Hatch Engine document.
+- Adds season window, observed 2025/2026 conditions, likely triggers, section progression, and recommended statuses.
+- Uses Salmonfly stages: Starting, Building, Peak, Declining, Mostly Finished, Past.
