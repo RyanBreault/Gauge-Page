@@ -25,3 +25,10 @@ This version updates the Rock Creek hatch knowledge base to a year-round model.
 - Adds Bitterroot hatch knowledge file.
 - Adds Bitterroot script to index.html.
 - Bitterroot hatches include staged Skwalas, Mother's Day Caddis, Golden Stones, and PMDs.
+
+
+## v6 update
+
+- Hatch engine now evaluates all gauges on a river that have valid water temperature.
+- Hatch cards keep one river-level panel, but show the likely location based on gauge readings.
+- Cards show which gauges support the call in the Why section.

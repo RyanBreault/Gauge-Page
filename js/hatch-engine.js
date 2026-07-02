@@ -28,6 +28,34 @@ function stars(count){
   return "★★★★★".slice(0,n) + "☆☆☆☆☆".slice(0,5-n);
 }
 
+function shortGaugeName(name){
+  return (name || "")
+    .replace(", MT","")
+    .replace("Bitterroot River ","")
+    .replace("Rock Creek ","")
+    .replace("Middle Fork Rock Creek ","Middle Fork ")
+    .replace(" near "," @ ")
+    .replace(" at "," @ ");
+}
+
+function gaugeZone(river, gauge){
+  const n = gauge.name || "";
+
+  if(river.name === "Bitterroot"){
+    if(n.includes("East Fork") || n.includes("West Fork") || n.includes("Darby")) return "Upper Bitterroot";
+    if(n.includes("Bell Crossing")) return "Middle Bitterroot";
+    if(n.includes("Missoula")) return "Lower Bitterroot";
+  }
+
+  if(river.name === "Rock Creek"){
+    if(n.includes("Middle Fork")) return "Upper Rock Creek";
+    if(n.includes("Clinton")) return "Lower Rock Creek";
+  }
+
+  if(gauge.section) return gauge.section;
+  return river.name;
+}
+
 function scoreSimpleHatch(rule, tempF){
   if(!Number.isFinite(tempF)) return null;
 
@@ -72,7 +100,7 @@ function scoreSimpleHatch(rule, tempF){
     starCount,
     comingSoon: status === "Coming Soon",
     hatchModel: "simple",
-    why: [
+    whyBase: [
       `Water temp ${fmtTemp(tempF)}`,
       `Ideal ${rule.idealTemp[0]}–${rule.idealTemp[1]}°F`,
       inSeason ? "Seasonal window is open" : "Outside normal seasonal window"
@@ -94,8 +122,8 @@ function scoreStagedHatch(rule, tempF){
       starCount: 1,
       hideFromPrimary: true,
       hatchModel: "staged",
-      why: [
-        `Normal Rock Creek window has passed`,
+      whyBase: [
+        `Normal window has passed`,
         `Water temp ${fmtTemp(tempF)}`,
         rule.replacedBy ? `Better signal: ${rule.replacedBy}` : "Hatch is likely past"
       ]
@@ -152,7 +180,7 @@ function scoreStagedHatch(rule, tempF){
     starCount,
     comingSoon: bestStage.status === "Coming Soon" || bestStage.status === "Not Started",
     hatchModel: "staged",
-    why: [
+    whyBase: [
       `Water temp ${fmtTemp(tempF)}`,
       `Stage range ${bestStage.tempRange[0]}–${bestStage.tempRange[1]}°F`,
       inSeason ? "Seasonal window is open" : "Outside normal seasonal window",
@@ -166,22 +194,64 @@ function scoreHatch(rule, tempF){
   return scoreSimpleHatch(rule, tempF);
 }
 
+function scoreHatchAcrossRiver(rule, river){
+  const gaugeScores = getRiverGauges(river)
+    .map(gauge => {
+      const temp = latest(state.data[gauge.id]?.temp || [])?.value;
+      const scored = scoreHatch(rule, temp);
+      if(!scored) return null;
+
+      return {
+        ...scored,
+        gauge,
+        temp,
+        zone: gaugeZone(river, gauge),
+        gaugeName: shortGaugeName(gauge.name)
+      };
+    })
+    .filter(Boolean);
+
+  if(!gaugeScores.length) return null;
+
+  gaugeScores.sort((a,b) => b.score - a.score || b.importance - a.importance);
+  const best = gaugeScores[0];
+
+  const goodScores = gaugeScores.filter(g => g.score >= Math.max(45, best.score - 18));
+  const zones = [...new Set(goodScores.map(g => g.zone))];
+  const basedOn = goodScores
+    .slice(0,3)
+    .map(g => `${g.gaugeName} ${fmtTemp(g.temp)}`);
+
+  return {
+    ...best,
+    location: zones.length ? zones.join(" / ") : river.name,
+    basedOn,
+    allGaugeScores: gaugeScores,
+    why: [
+      `Likely location: ${zones.length ? zones.join(" / ") : river.name}`,
+      `Based on ${basedOn.join(", ")}`,
+      ...(best.whyBase || [])
+    ]
+  };
+}
+
 function renderHatchPanel(river){
   const rules = window.HATCH_DATABASE?.[river.name];
   if(!rules) return "";
 
-  const headline = getHeadlineGauge(river);
-  const temp = latest(state.data[headline?.id]?.temp || [])?.value;
+  const validTempGauges = getRiverGauges(river)
+    .map(g => ({ gauge:g, temp: latest(state.data[g.id]?.temp || [])?.value }))
+    .filter(x => Number.isFinite(x.temp));
 
-  if(!Number.isFinite(temp)){
+  if(!validTempGauges.length){
     return `<div class="panel hatch-panel">
       <h3>Likely Hatches</h3>
-      <p class="muted">Waiting for a valid water temperature from the headline gauge.</p>
+      <p class="muted">Waiting for a valid water temperature from one of this river's gauges.</p>
     </div>`;
   }
 
   const scored = rules
-    .map(rule => scoreHatch(rule, temp))
+    .map(rule => scoreHatchAcrossRiver(rule, river))
     .filter(Boolean)
     .sort((a,b) => b.score - a.score || b.importance - a.importance);
 
@@ -197,7 +267,7 @@ function renderHatchPanel(river){
     <div class="hatch-head">
       <div>
         <h3>Likely Hatches</h3>
-        <p class="muted">Based on ${headline.name.replace(", MT","")} at ${fmtTemp(temp)}</p>
+        <p class="muted">Factoring ${validTempGauges.length} gauge${validTempGauges.length === 1 ? "" : "s"} with valid water temperature</p>
       </div>
     </div>
 
@@ -222,6 +292,7 @@ function renderHatchCard(h, secondary=false){
     </div>
     <div class="hatch-stars">${stars(h.starCount)}</div>
     <div class="hatch-stage">${h.stageName || h.status}</div>
+    <div class="hatch-location">Likely location: ${h.location || "Best matching gauge"}</div>
     <div class="hatch-meta">${h.position || "River-wide"} • ${h.timeOfDay || "Varies"} • Confidence: ${h.confidence || "moderate"}</div>
     ${h.stageDescription ? `<div class="hatch-note">${h.stageDescription}</div>` : ""}
     <div class="hatch-why">
