@@ -179,55 +179,106 @@ const ROCK_CREEK_HATCHES = [
     season: ["early_summer", "summer"],
     model: "staged",
     duration: "long",
-    position: "Lower first, then whole river",
+    position: "Lower first; middle follows 3–5 days later; upper follows 5–10 days later",
     timeOfDay: "Afternoon",
     replacedBy: "Yellow Sallies / PMDs / Summer Caddis",
+    linkedTo: "Salmonflies",
+    relationshipToSalmonflies: {
+      beginsAfterFirstSalmonflies: "5–7 days",
+      becomesImportantAfterSalmonfliesBegin: "7–14 days",
+      peakRelationship: "Peak Golden Stone fishing usually occurs as Salmonflies are fading.",
+      engineNote: "Golden Stones should increase as Salmonflies decline, but this version does not yet store the annual Salmonfly start date."
+    },
+    sectionProgression: {
+      lower: "First",
+      middle: "3–5 days behind lower river",
+      upper: "5–10 days behind lower river; may continue into early July",
+      notes: "Golden Stones gradually move upstream and generally last longer than Salmonflies."
+    },
+    statuses: [
+      "Not Started",
+      "Imminent",
+      "Starting",
+      "Building",
+      "Peak",
+      "Declining",
+      "Past"
+    ],
     stages: [
       {
-        name: "Not Started / Pre-hatch",
-        tempRange: [52, 55],
-        status: "Coming Soon",
+        name: "Imminent / Pre-hatch",
+        tempRange: [54, 56],
+        status: "Imminent",
         stars: 2,
-        description: "Golden Stones are close, but Salmonflies are usually still the primary big-bug event."
+        description: "Golden Stones are close. Watch for them as Salmonflies begin to fade and water clarity improves."
       },
       {
-        name: "Beginning",
-        tempRange: [55, 58],
-        status: "Beginning",
+        name: "Starting",
+        tempRange: [56, 58],
+        status: "Starting",
         stars: 3,
-        description: "Golden Stones are starting to show, especially as Salmonflies begin to fade."
+        description: "Golden Stones are starting to show, especially on the lower river and in warmer sections."
       },
       {
-        name: "Peak / Excellent",
-        tempRange: [58, 64],
+        name: "Building",
+        tempRange: [58, 60],
+        status: "Building",
+        stars: 4,
+        description: "Golden Stone activity is building. This often overlaps with fading Salmonflies, PMDs, Yellow Sallies, and Green Drakes."
+      },
+      {
+        name: "Peak",
+        tempRange: [60, 62],
+        status: "Peak",
+        stars: 5,
+        description: "Prime Golden Stone activity. These often provide better fishing than Salmonflies because trout keep looking for big bugs."
+      },
+      {
+        name: "Excellent / Extended",
+        tempRange: [62, 64],
         status: "Excellent",
         stars: 5,
-        description: "Golden Stones are highly active and often provide better fishing than Salmonflies because trout keep looking for big bugs."
+        description: "Golden Stones remain excellent even after the peak emergence. Big stonefly dries can stay productive as a searching pattern."
       },
       {
-        name: "Ending / Stragglers",
+        name: "Declining / Stragglers",
         tempRange: [64, 68],
-        status: "Ending",
+        status: "Declining",
         stars: 3,
-        description: "The main hatch is winding down, but stragglers can remain, especially higher in the canyon."
+        description: "The main hatch is declining, but stragglers can continue, especially in the upper canyon."
       }
     ],
     calendar: {
-      typicalWindow: "Early June–Late June",
-      typicalStart: "June 6",
-      typicalPeak: "June 13–16",
-      typicalEnd: "June 24",
-      stillExcellent: "June 18–25",
-      stragglers: "Early July in the upper canyon"
+      typicalWindow: "Late May / Early June through late June",
+      firstMeaningfulActivity: "June 3–10",
+      building: "June 7–14",
+      peak: "June 12–22",
+      primePeak: "June 15–20",
+      declining: "June 22–30",
+      past: "Early July, though upper creek may hold stragglers",
+      historicalReconstruction: [
+        { year: 2016, start: "Jun 8–10", peak: "Jun 12–18", finish: "Jun 24–27" },
+        { year: 2017, start: "Jun 10–12", peak: "Jun 15–20", finish: "Jun 26–29" },
+        { year: 2018, start: "Jun 5–8", peak: "Jun 10–15", finish: "Jun 22–25" },
+        { year: 2019, start: "Jun 9–11", peak: "Jun 13–18", finish: "Jun 24–27" },
+        { year: 2020, start: "Jun 4–7", peak: "Jun 9–14", finish: "Jun 20–23" },
+        { year: 2021, start: "Jun 1–4", peak: "Jun 6–11", finish: "Jun 16–20" },
+        { year: 2022, start: "Jun 15–18", peak: "Jun 20–26", finish: "Jul 1–5" },
+        { year: 2023, start: "Jun 8–10", peak: "Jun 12–18", finish: "Jun 24–28" },
+        { year: 2024, start: "Jun 3–6", peak: "Jun 8–14", finish: "Jun 20–24" },
+        { year: 2025, start: "May 31–Jun 3", peak: "Jun 5–11", finish: "Jun 18–22" }
+      ]
     },
     supportingConditions: [
-      "Water temperatures around 55–60°F",
-      "Stable or dropping flows after runoff",
-      "Water clarity improving",
-      "Daily highs above 70°F",
-      "Salmonfly hatch beginning to fade"
+      "Water temperatures generally in the mid-50s when starting",
+      "Building activity around 56–60°F",
+      "Peak activity commonly around 58–62°F",
+      "Stable or slowly dropping flows",
+      "Improving water clarity after runoff",
+      "Several consecutive warm days increase activity",
+      "Cool rain may temporarily reduce surface activity but usually does not end the hatch"
     ],
-    progression: "Golden Stones follow immediately behind Salmonflies, last longer, and often overlap with Green Drakes, PMDs, Yellow Sallies, and evening Caddis."
+    progression: "Lower Rock Creek hatches first. Middle follows approximately 3–5 days later. Upper generally follows 5–10 days later and may continue into early July."
   },
 
   {

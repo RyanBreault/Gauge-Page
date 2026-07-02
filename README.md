@@ -39,3 +39,10 @@ This version updates the Rock Creek hatch knowledge base to a year-round model.
 - Updates Rock Creek Salmonfly parameters from the dedicated Salmonfly Hatch Engine document.
 - Adds season window, observed 2025/2026 conditions, likely triggers, section progression, and recommended statuses.
 - Uses Salmonfly stages: Starting, Building, Peak, Declining, Mostly Finished, Past.
+
+
+## v8 update
+
+- Updates Rock Creek Golden Stone parameters from the dedicated Golden Stone Hatch Engine document.
+- Adds Golden Stone status stages: Imminent, Starting, Building, Peak, Excellent, Declining, Past.
+- Adds relationship to Salmonflies and 2016–2025 Golden Stone historical reconstruction.

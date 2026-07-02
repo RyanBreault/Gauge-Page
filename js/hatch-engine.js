@@ -159,6 +159,7 @@ function scoreStagedHatch(rule, tempF){
   const statusBase = {
     "Coming Soon": 45,
     "Not Started": 40,
+    "Imminent": 52,
     "Starting": 62,
     "Building": 78,
     "Likely": 70,
